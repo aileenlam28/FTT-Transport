@@ -286,18 +286,14 @@ end
 
 
 
-function [EffectSSheet,IncomeRateSheet,GPriceSheet,SelectSheet,SharesSheet,DemandSheet,VehiclesSheet,SalesSheet,CostSheet,VTSheet,FTSheet,RTSheet,REGSheet,ExCapSheet,CO2Sheet,BFMSheet] = ReadData(Filename,k)
+function [GPriceSheet,SelectSheet,SharesSheet,DemandSheet,VehiclesSheet,SalesSheet,CostSheet,VTSheet,FTSheet,RTSheet,REGSheet,ExCapSheet,CO2Sheet,BFMSheet] = ReadData(Filename,k)
 %Filenames is a cell of strings
 
 if (exist(Filename))
     % income rate from E3ME
     IncomeRateSheet = xlsread(Filename,strcat('IncomeRate'));
-    % income rate from E3ME
-    EffectSSheet = xlsread(Filename,strcat('EffectS'));
     %income price data
     GPriceSheet = xlsread(Filename,strcat('GPrice'));
-    % selection spreadsheet
-    SelectSheet = xlsread(Filename,strcat('Selection'));
     % read cost data 
     CostSheet = xlsread(Filename,strcat('Costs'));
     % read shares data 
@@ -356,12 +352,9 @@ set(handles.Slots(k),'BackgroundColor',[0 1 0]);
 %Filenames
 Filename = strcat(get(handles.PathField,'string'),get(handles.CostsEdit,'string'));
 %Data
-[EffectSSheet,IncomeRateSheet,GPriceSheet,SelectSheet,SharesSheet,DemandSheet,VehiclesSheet,SalesSheet,CostSheet,VTSheet,FTSheet,RTSheet,REGSheet,ExCapSheet,CO2Sheet,BFMSheet] = ReadData(Filename,k);
-handles.DataScenario(k).EffectSSheet = EffectSSheet;
-handles.DataScenario(k).GPriceSheet = GPriceSheet;
-handles.DataScenario(k).SelectSheet = SelectSheet;
+[GPriceSheet,SharesSheet,DemandSheet,VehiclesSheet,SalesSheet,CostSheet,VTSheet,FTSheet,RTSheet,REGSheet,ExCapSheet,CO2Sheet,BFMSheet] = ReadData(Filename,k);
 handles.DataScenario(k).SharesSheet = SharesSheet;
-handles.DataScenario(k).IncomeRateSheet = IncomeRateSheet;
+handles.DataScenario(k).GPriceSheet = GPriceSheet;
 handles.DataScenario(k).DemandSheet = DemandSheet;
 handles.DataScenario(k).VehiclesSheet = VehiclesSheet;
 handles.DataScenario(k).SalesSheet = SalesSheet;
@@ -382,7 +375,7 @@ handles.dt = dt;
 if ~isempty(SharesSheet)
     %Simulation here!
     clear handles.Scenario(k);
-    handles.Scenario(k) = FTTTr53x25v3(EffectSSheet,IncomeRateSheet,GPriceSheet,SelectSheet,SharesSheet,DemandSheet,VehiclesSheet,SalesSheet,CostSheet,VTSheet,FTSheet,RTSheet,REGSheet,ExCapSheet,CO2Sheet,BFMSheet,dt,NTT,NWR,EndYear);
+    handles.Scenario(k) = FTTTr53x25v3(GPriceSheet,SharesSheet,DemandSheet,VehiclesSheet,SalesSheet,CostSheet,VTSheet,FTSheet,RTSheet,REGSheet,ExCapSheet,CO2Sheet,BFMSheet,dt,NTT,NWR,EndYear);
     handles.ScCalculated(k) = 1;
 end
 
@@ -408,12 +401,9 @@ for k = kk
     %Filenames
     Filename = strcat(get(handles.PathField,'string'),get(handles.CostsEdit,'string'));
     %Data
-    [EffectSSheet,IncomeRateSheet,GPriceSheet,SelectSheet,SharesSheet,DemandSheet,VehiclesSheet,SalesSheet,CostSheet,VTSheet,FTSheet,RTSheet,REGSheet,ExCapSheet,CO2Sheet,BFMSheet] = ReadData(Filename,k);
-    handles.DataScenario(k).IncomeRateSheet = EffectSSheet;
-    handles.DataScenario(k).IncomeRateSheet = IncomeRateSheet;
+    [GPriceSheet,SharesSheet,DemandSheet,VehiclesSheet,SalesSheet,CostSheet,VTSheet,FTSheet,RTSheet,REGSheet,ExCapSheet,CO2Sheet,BFMSheet] = ReadData(Filename,k);
     handles.DataScenario(k).GPriceSheet = GPriceSheet;
     handles.DataScenario(k).SharesSheet = SharesSheet;
-    handles.DataScenario(k).SelectSheet = SelectSheet;
     handles.DataScenario(k).DemandSheet = DemandSheet;
     handles.DataScenario(k).VehiclesSheet = VehiclesSheet;
     handles.DataScenario(k).SalesSheet = SalesSheet;
@@ -433,7 +423,7 @@ for k = kk
     if ~isempty(SharesSheet)
         %Simulation here!
         clear handles.Scenario(k);
-        handles.Scenario(k) = FTTTr53x25v3(EffectSSheet,IncomeRateSheet,GPriceSheet,SelectSheet,SharesSheet,DemandSheet,VehiclesSheet,SalesSheet,CostSheet,VTSheet,FTSheet,RTSheet,REGSheet,ExCapSheet,CO2Sheet,BFMSheet,dt,NTT,NWR,EndYear);
+        handles.Scenario(k) = FTTTr53x25v3(GPriceSheet,SharesSheet,DemandSheet,VehiclesSheet,SalesSheet,CostSheet,VTSheet,FTSheet,RTSheet,REGSheet,ExCapSheet,CO2Sheet,BFMSheet,dt,NTT,NWR,EndYear);
         %Save data in case the rest crashes
         guidata(hObject, handles);
         handles.ScenariosEmpty = 0;
