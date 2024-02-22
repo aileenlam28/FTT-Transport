@@ -1,14 +1,5 @@
-function Out = FTTTr53x25v3(EffectSSheet,IncomeRateSheet,GPriceSheet,SelectSheet,SharesSheet,DemandSheet,VehiclesSheet,SalesSheet,CostSheet,VTSheet,FTSheet,RTSheet,REGSheet,ExCapSheet,CO2Sheet,BFMSheet,dt,NTT,NWR,EndYear)
-%---FTT transport with 31 technologies in 59 countries income version 1
-%---FTTTr53x25v1
-%   ---First experimental version
-%      Assumtions are in 3 separate xls files
-%---FTTTr53x25v2
-%   ---Version developed in tandem with E3ME-FTT-Tr
-%      Assumptions consolidated into single file for ease of use in E3ME
-%---FTTtr53x25xv2
-%   ---Increased number of policies and better control of diffusion rates
-
+function Out = FTTTr53x25v3(GPriceSheet,SharesSheet,DemandSheet,VehiclesSheet,SalesSheet,CostSheet,VTSheet,FTSheet,RTSheet,REGSheet,ExCapSheet,CO2Sheet,BFMSheet,dt,NTT,NWR,EndYear)
+%---FTT transport with 31 technologies in 59 countries 
 %
 %  Matrices are 3D prisms with time in the 3rd dimension
 %
@@ -26,8 +17,6 @@ function Out = FTTTr53x25v3(EffectSSheet,IncomeRateSheet,GPriceSheet,SelectSheet
 %  |_________|/
 %      NTT
 
-%E3ME regions:
-%RegStr = {'1 Belgium','2 Denmark','3 Germany','4 Greece','5 Spain','6 France','7 Ireland','8 Italy','9 Luxembourg','10 Netherlands','11 Austria','12 Portugal','13 Finland','14 Sweden','15 UK','16 Czech Republic','17 Estonia','18 Cyprus','19 Latvia','20 Lithuania','21 Hungary','22 Malta','23 Poland','24 Slovenia','25 Slovakia','26 Bulgaria','27 Romania','28 Norway','29 Switzerland','30 Iceland','31 Croatia','32 Turkey','33 Macedonia','34 USA','35 Japan','36 Canada','37 Australia','38 New Zealand','39 Russian Federation','40 Rest of Annex I','41 China','42 India','43 Mexico','44 Brazil','45 Argentina','46 Colombia','47 Rest of Latin America','48 Korea','49 Taiwan','50 Indonesia','51 Rest of ASEAN','52 OPEC excl Venezuela','53 Rest of world'};
 %---------------------Variable declarations--------------------------
 StartYear = 2022;
 NY = 31;
@@ -64,8 +53,7 @@ EG = zeros(NTT,NWR);            %Fuel consumption factors MJ/seat-km
 dd = zeros(NTT,NWR);            %Inverse life expectancies (y^-1)
 FF = zeros(NTT,NWR);            %Occupancy rate (p/seat)
 CF = zeros(NTT,NWR); 
-%Capacity factor (not time dependent) (Mpkm/kseat-y)
-%NSales=zeros(59,61);
+
 Costs = zeros(NTT,17,NWR,N,1,1,1);    %4D matrix of cost components
 NewCost=zeros(NTT,1,NWR,N);
 VT = zeros(NTT,NWR,N);          %Vehicle tax ($)
@@ -84,6 +72,7 @@ ICost=zeros(NTT,NWR,N);          % initial cost without the cost of battery
 tech1=zeros(1:3);
 DelPr=zeros(NTT,NWR,N);
 Cap=zeros(NTT,NWR,N);     %battery capacity
+
 %------------------Variable initialisations------------------
 %B = SPSheet(4:28,3:27);     %Spillover matrix
 B = CostSheet(36:66,24:54);     %Spillover matrix
@@ -97,7 +86,6 @@ IBatCost=CostSheet(1985:1989,1);
 % intital battery cost
 EngD=CostSheet(1997:1999,2);
 RareM=CostSheet(2002:2003,3:123);
-
 
 %Survival function (23:1 years old)
 Ell = CostSheet(133:191,26:52);
@@ -125,23 +113,6 @@ TJET = CostSheet(368:398,24:35);
 %load spreadsheets for income price
 RawM = GPriceSheet(61:62,2:126);
 DMCcont=GPriceSheet(67,2:126);
-%WPriceN(k,t1+1)= WPrice(k,4*t1+2)*GPrice(k,t1);
-%IncomeRate=IncomeRateSheet(3:61,1:53);
-%EffectS=EffectSSheet(:,:);
-%Category spreadsheet
-%Cat = SelectSheet(1:59,3:7);
-
-%for k=1:NWR
-        
-                %GPrice1(k,1,t)=(1+IncomeRate(k,t))*exp(EffectS(k,1))-1; %% Price effect    
-                % GPrice1(k,1,1)=(1+IncomeRate(k,1))^(EffectS(k,1))-1; %% Price effect 
-                %GPrice1(k,1,t)=((1+IncomeRate(k,fix(t/4)+1))^(fix(t/4)+1)+1)^(EffectS(k,1))-1; 
-                 %GPrice1 translates from income change to average price
-                 %change 
-        
-%end
-
-
 
 for k=1:NWR
     %Cost matrices
@@ -161,19 +132,14 @@ for k=1:NWR
     %Number of seats per vehicle (s/veh)
     Nseats(:,k) = CostSheet(33*(k-1)+3:33*k,17)';
     %Euromonitor capacity factor in (Mpkm/kseats-y)
-    %(FF in p/seat, d in km/y -> FFd in pkm/seat-y we take out 1000)
-    
+   
     % Don't use this
     CF0(:,k) = CostSheet(33*(k-1)+3:33*k,14)'/1000;
     CF0(isnan(CF0)) = 0; %Temp
-    
+  
     % Battery capacity
     Cap(:,k,1)=CostSheet(33*(k-1)+3:33*k,21)';
-    
     ICost(:,k,1,1,1,1)=Costs(:,1,k,1,1,1,1)/DMCcont(1,1)-Cap(:,k,1)*IBatCost(1,1)-Costs(:,1,k,1,1,1,1)*0.15;
-    %ICost(:,k,1,L,B,ED)=Costs(:,1,k,1,L,B,ED)/DMC-Cap(:,k,1)*IBatCost(B,1)-Costs(:,1,k,1,L,B,ED)*0.2/DMC;
-    %-Costs(:,1,k,1)*0.2;
-    
      %Filling factors in (p/seats) assumed constant
     FF(:,k) = CostSheet(33*(k-1)+3:33*k,13)';
     %Yearly exogenous demand Mvehkm interpolated on dt
@@ -187,16 +153,7 @@ for k=1:NWR
     Xitot(k,:) = interp1(SalesSheet(3,35:35+EndYear-StartYear),SalesSheet(3+k,35:35+EndYear-StartYear),2022+dt*[0:N-1]);
     %Biofuel mandates
     BFM(k,:) = interp1(BFMSheet(3,9:9+EndYear-StartYear),BFMSheet(3+k,9:9+EndYear-StartYear),2022+dt*[0:N-1]);
-    %Discount rates
-        
-    %weighted price at the first time step
-    % WPriceS(k,1) = (S(1,k,1).*Costs(1,1,k,1)+S(4,k,1).*Costs(4,1,k,1)+S(7,k,1).*Costs(7,1,k,1)+S(10,k,1).*Costs(10,1,k,1)+S(13,k,1).*Costs(13,1,k,1)+S(16,k,1).*Costs(16,1,k,1)+S(19,k,1).*Costs(19,1,k,1))/((S(1,k,1)+S(4,k,1)+S(7,k,1)+S(10,k,1)+S(13,k,1)+S(16,k,1)+S(19,k,1)));
-     %WPriceM(k,1)=  (S(2,k,1).*Costs(2,1,k,1)+S(5,k,1).*Costs(5,1,k,1)+S(8,k,1).*Costs(8,1,k,1)+S(11,k,1).*Costs(11,1,k,1)+S(14,k,1).*Costs(14,1,k,1)+S(17,k,1).*Costs(17,1,k,1)+S(20,k,1).*Costs(20,1,k,1))/((S(2,k,1)+S(5,k,1)+S(8,k,1)+S(11,k,1)+S(14,k,1)+S(17,k,1)+S(20,k,1)));
-     %WPriceL(k,1)=  (S(3,k,1).*Costs(3,1,k,1)+S(6,k,1).*Costs(6,1,k,1)+S(9,k,1).*Costs(9,1,k,1)+S(12,k,1).*Costs(12,1,k,1)+S(15,k,1).*Costs(15,1,k,1)+S(18,k,1).*Costs(18,1,k,1)+S(21,k,1).*Costs(21,1,k,1))/((S(3,k,1)+S(6,k,1)+S(9,k,1)+S(12,k,1)+S(15,k,1)+S(18,k,1)+S(21,k,1)));
-     %WPriceSM(k,1)= (S(1,k,1).*Costs(1,1,k,1)+S(4,k,1).*Costs(4,1,k,1)+S(7,k,1).*Costs(7,1,k,1)+S(10,k,1).*Costs(10,1,k,1)+S(13,k,1).*Costs(13,1,k,1)+S(16,k,1).*Costs(16,1,k,1)+S(19,k,1).*Costs(19,1,k,1)+ S(2,k,1).*Costs(2,1,k,1)+S(5,k,1).*Costs(5,1,k,1)+S(8,k,1).*Costs(8,1,k,1)+S(11,k,1).*Costs(11,1,k,1)+S(14,k,1).*Costs(14,1,k,1)+S(17,k,1).*Costs(17,1,k,1)+S(20,1,k,1).*Costs(20,1,k,1))/((S(1,k,1)+S(4,k,1)+S(7,k,1)+S(10,k,1)+S(13,k,1)+S(16,k,1)+S(19,k,1)+S(2,k,1)+S(5,k,1)+S(8,k,1)+S(11,k,1)+S(14,k,1)+S(17,k,1)+S(20,k,1)));
-     %WPriceML(k,1) =(S(3,k,1).*Costs(3,1,k,1)+S(6,k,1).*Costs(6,1,k,1)+S(9,k,1).*Costs(9,1,k,1)+S(12,k,1).*Costs(12,1,k,1)+S(15,k,1).*Costs(15,1,k,1)+S(18,k,1).*Costs(18,1,k,1)+S(21,k,1).*Costs(21,1,k,1)+S(2,k,1).*Costs(2,1,k,1)+S(5,k,1).*Costs(5,1,k,1)+S(8,k,1).*Costs(8,1,k,1)+S(11,k,1).*Costs(11,1,k,1)+S(14,k,1).*Costs(14,1,k,1)+S(17,k,1).*Costs(17,1,k,1)+S(20,1,k,1).*Costs(20,1,k,1))/((S(3,k,1)+S(6,k,1)+S(9,k,1)+S(12,k,1)+S(15,k,1)+S(18,k,1)+S(21,k,1)+S(2,k,1)+S(5,k,1)+S(8,k,1)+S(11,k,1)+S(14,k,1)+S(17,k,1)+S(20,k,1)));
-     %WPrice(k,1)=S(1,k,1).*Costs(1,1,k,1)+S(2,k,1).*Costs(2,1,k,1)+S(3,k,1).*Costs(3,1,k,1)+S(4,k,1).*Costs(4,1,k,1)+S(5,k,1).*Costs(5,1,k,1)+S(6,k,1).*Costs(6,1,k,1)+S(7,k,1).*Costs(7,1,k,1)+S(8,k,1).*Costs(8,1,k,1)+S(9,k,1).*Costs(9,1,k,1)+S(10,k,1).*Costs(10,1,k,1)+S(11,k,1).*Costs(11,1,k,1)+S(12,k,1).*Costs(12,1,k,1)+S(13,k,1).*Costs(13,1,k,1)+S(14,k,1).*Costs(14,1,k,1)+S(15,k,1).*Costs(15,1,k,1)+S(16,k,1).*Costs(16,1,k,1)+S(17,k,1).*Costs(17,1,k,1)+S(18,k,1).*Costs(18,1,k,1)+S(19,k,1).*Costs(19,1,k,1)+S(20,k,1).*Costs(20,1,k,1)+S(21,k,1).*Costs(21,1,k,1)+S(22,k,1).*Costs(22,1,k,1)+S(23,k,1).*Costs(23,1,k,1)+S(24,k,1).*Costs(24,1,k,1)+S(25,k,1).*Costs(25,1,k,1)+S(26,k,1).*Costs(26,1,k,1)+S(27,k,1).*Costs(27,1,k,1)++S(28,k,1).*Costs(28,1,k,1)+S(29,k,1).*Costs(29,1,k,1)+S(30,k,1).*Costs(30,1,k,1)+S(31,k,1).*Costs(31,1,k,1);
-    
+    %Discount rates    
     r(:,k) = CostSheet(33*(k-1)+3:33*k,9)';
     
     %Normalise CFs to match the ratio between D and Utot:
@@ -205,22 +162,18 @@ for k=1:NWR
     else
         CF(:,k,1) = 0;
     end
-    %U is the transport capacity by technology (kseats)/number of
-    %cars*seat/U*KMper cars=MKM
-   
+    %car fleet calculated from shares    
     U(:,k,1) = S(:,k,1)*Utot(k,1);
     NSales(:,k,121)=NSa(:,k,121);
+    %New vehicle sales
     for NS=1:120
      NSales(1:31,k,NS)=SalesSheet(33+33*(k):63+33*k,4+NS);
     end
-       
-    
-    %.*Nseats(:,k);
+      
     %I is new sales (positive changes in U)
     I(:,k,1) = (U(:,k,1) - U(:,k,1))/dt.*(U(:,k,1) - U(:,k,1)>0);
     %Total service generated by a particular technology Mpkm
     G(:,k,1) = U(:,k,1).*D(k,1)*1000;
-    %G(:,k,1) = U(:,k,1).*CF(:,k);
     %Starting cumulative capacities
     W(:,k,1) = CostSheet(3:33,20);
     WCap(:,k,1) = CostSheet(3:33,20);
@@ -243,138 +196,19 @@ for k=1:NWR
     VT(:,k,:) = permute(interp1N(VTSheet(2,3:51)',VTSheet(32*(k-1)+3:32*k+1,3:51)',2022+dt*[0:N-1]')',[1 3 2]);
     %Road Taxes:
     RT(:,k,:) = permute(interp1N(RTSheet(2,3:51)',RTSheet(32*(k-1)+3:32*k+1,3:51)',2022+dt*[0:N-1]')',[1 3 2]);
-
+    %Oil price trend assumption 
     OilP(:,k,:)=CostSheet(2011:2041,11:123);
     %Exogenous capacities
-    %SEx(:,k,:)= permute(interp1N(ExCapSheet(2,3:41)',ExCapSheet(26*(k-1)+3:26*k+1,3:41)',2016+dt*[0:N-1]')',[1 3 2]);
     SEx(:,k,:) = permute(interp1N(ExCapSheet(2,3:51)',ExCapSheet(32*(k-1)+3:32*k+1,3:51)',2022+dt*[0:N-1]')',[1 3 2]);  
-    %permute(ExCapSheet(32*(k-1)+3:32*k+1,3:2+EndYear-StartYear),[1 3 2]);
-    
-    %Vehicle Taxes:
-    %a = interp1N(REGSheet(2,3:41)',REGSheet(26*(k-1)+3:26*k+1,3:41)',2016+dt*[0:N-1]')';
-    %REG variable: (0 = no REG, > 0 = Phase out if U > REG)
-    %REG(:,k,:) = ~(a | [zeros(NTT,1) a(:,1:end-1)] | [zeros(NTT,2) a(:,1:end-2)] | [zeros(NTT,3) a(:,1:end-3)]); 
+    %how regulation is modelled
     REG(:,k,1:4:end-3) = permute(REGSheet(32*(k-1)+3:32*k+1,3:2+EndYear-StartYear),[1 3 2]);
     REG(:,k,2:4:end-2) = permute(REGSheet(32*(k-1)+3:32*k+1,3:2+EndYear-StartYear),[1 3 2]);
     REG(:,k,3:4:end-1) = permute(REGSheet(32*(k-1)+3:32*k+1,3:2+EndYear-StartYear),[1 3 2]);
-    REG(:,k,4:4:end) = permute(REGSheet(32*(k-1)+3:32*k+1,3:2+EndYear-StartYear),[1 3 2]);
+    REG(:,k,4:4:end) = permute(REGSheet(32*(k-1)+3:32*k+1,3:2+EndYear-StartYear),[1 3 2]); 
+   end
 
-% calculate the average price
-            %WPrice(k,1) = sum(S(:,k,1).*Costs(:,1,k,1));
-        
- % prices for small cars increase by 5%
- 
-            
-            
-        %for t1=1:39
-           %WPriceN(k,t1+1)= WPrice(k,4*t1+2)*GPrice(k,t1);
-        %end 
-         % Income and price section 
-        %Ss(k,1) = S(1,k,1)+S(4,k,1)+S(7,k,1)+S(10,k,1)+S(13,k,1)+S(16,k,1)+S(19,k,1);
-        %Sml(k,1) = S(3,k,1)+S(6,k,1)+S(9,k,1)+S(12,k,1)+S(15,k,1)+S(18,k,1)+S(21,k,1)+S(2,k,1)+S(5,k,1)+S(8,k,1)+S(11,k,1)+S(14,k,1)+S(17,k,1)+S(20,k,1);    
-       
-        %technology 1 (small cars); small car average prices*percentage
-        %change in average car price as a result of the income effect
-        %(percent per income change)
-        
-        %if (Cat(k,1)==1)
-         %for tech=1:31   
-            %if (mod(tech,3)==1)
-            
-            % DelPr(tech,k,1)=0;
-            %elseif (mod(tech,3)== 2)
-            % DelPr(tech,k,1)= 0;
-           %elseif (mod(tech,3)==0)
-            % DelPr(tech,k,1)= 0;
-           % end
-            
-           
-         %end
-        
-       
-     % elseif (Cat(k,2)==1)
-        % for tech=1:31    
-           % if (mod(tech,3)==1)
-             %DelPr(k,tech,1)= -WPriceS(k,1)*GPrice1(k,1,1);
-             %NewCost(tech,1,k,1)=Costs(tech,1,k,1)*(exp(log((1+GPrice1(k,1,1)))/EffectS(62+k,2)));
-             %DelPr(tech,k,1)= Costs(tech,1,k,1)*(exp(log((1+GPrice1(k,1,1)))/EffectS(62+k,2))-1);
-             
-            % NewCost(tech,1,k,1)=Costs(tech,1,k,1);
-            % DelPr(tech,k,1)= 0;
-            % DelPr(tech,k,1)=10000000;
-           % elseif (mod(tech,3)== 2)
-            % NewCost(tech,1,k,1)=Costs(tech,1,k,1)*(exp(log((1+GPrice1(k,1,1)))/EffectS(62+k,2)));
-            % DelPr(tech,k,1)= 0;
-             %DelPr(k,tech,1)= -WPriceM(k,1)*GPrice1(k,1,1);
-           % elseif (mod(tech,3)==0)
-            % DelPr(tech,k,1)=0;
-           % end
-        % end  
-      
-        % alphaDeltay+0.1*S3/S1
-        % create a variable that can be added to the cost 
-       %elseif (Cat(k,3)==1)
-        % for tech=1:31
-          %  if (mod(tech,3)==1)
-            % DelPr(tech,k,1)= 0;
-           % elseif (mod(tech,3)== 2)
-             %DelPr(tech,k,1)= 0;
-           %elseif (mod(tech,3)==0)
-             %DelPr(k,tech,1)= WPriceL(k,1)*GPrice1(k,1,1);
-              % DelPr(tech,k,1)= 0;
-               %%0.82
-            
-           % end
-        % end 
-     % elseif (Cat(k,4)==1)
-       %  for tech=1:31
-         %   if (mod(tech,3)==1)
-          %   DelPr(tech,k,1)= 0;
-          %  elseif (mod(tech,3)== 2)
-          %   DelPr(tech,k,1)= 0;
-          %  elseif (mod(tech,3)==0)
-           %  DelPr(tech,k,1)= 0;
-              
-               %%0.82
-            
-          %  end
-        % end
-         
-     %elseif (Cat(k,5)==1)
-        % for tech=1:31
-          %  if (mod(tech,3)==1)
-            % DelPr(tech,k,1)= 0;
-            %elseif (mod(tech,3)== 2)
-            % DelPr(tech,k,1)= 0;
-            %elseif (mod(tech,3)==0)
-             % DelPr(tech,k,1)= 0;
-               %%0.82
-            
-            %end
-         %end    
-         
-         
-         
-         %else
-         %for tech=1:31    
-            %if (mod(tech,3)==1)
-            % DelPr(tech,k,1)= 0;
-            %elseif (mod(tech,3)== 2)
-            % DelPr(tech,k,1)= Costs(tech,1,k,1)*WPriceM(k,1)*GPrice1(k,1,1);
-            %elseif (mod(tech,3)==0)
-            % DelPr(tech,k,1)= Costs(tech,1,k,1)*WPriceL(k,1)*GPrice1(k,1,1);
-           % end
-         %end
-        
-      end
-
-
-%end
-%DelPr=permute(DelPr,[2 1 3]);
-%end
 for k=1:NWR
-    %This returns the NPV and dNPV for the calculations below
-    %[LCOT(:,k,1), dLCOT(:,k,1), TLCOT(:,k,1), dTLCOT(:,k,1), LTLCOT(:,k,1), dLTLCOT(:,k,1)] = FTTTrLCOTv3(Costs(:,:,k,1),CF(:,k),FF(:,k),Nseats(:,k),VT(:,k,1),FT(k,1),RT(:,k,1),RTCO(k,1),Gam(:,k),NTT,DelPr(:,k,1));
+    %Calculation of LCOT
     [LCOT(:,k,1,1,1,1), dLCOT(:,k,1,1,1,1), TLCOT(:,k,1,1,1,1), dTLCOT(:,k,1,1,1,1), LTLCOT(:,k,1,1,1,1), dLTLCOT(:,k,1,1,1,1)] = FTTTrLCOTv3(Costs(:,:,k,1,1,1,1),CF(:,k),FF(:,k),Nseats(:,k),VT(:,k,1),FT(k,1),RT(:,k,1),OilP(:,k,1),RTCO(k,1),Gam(:,k),NTT);
 end
 
@@ -384,7 +218,6 @@ end
 hw = waitbar(0,'Calculation in progress');  %Create waitbar
 
 for t = 2:N
-
     %Update the waitbar
     if mod(t,5)==0
         if ~ishandle(hw)
@@ -405,21 +238,16 @@ for t = 2:N
                 dFij = 1.414*sqrt(dLTLCOT(i,k,t-1,1,1,1)*dLTLCOT(i,k,t-1,1,1,1)+dLTLCOT(j,k,t-1,1,1,1)*dLTLCOT(j,k,t-1,1,1,1));
                 Fij = 0.5*(1+erft((LTLCOT(j,k,t-1,1,1,1)-LTLCOT(i,k,t-1,1,1,1))/dFij));
                 Fji = 1 - Fij;
-                %In FORTRAN: F(I,K) = Fij*(1.0-isReg(I,J))*(1.0-isReg(K,J)) + isReg(K,J)*(1.0-isReg(I,J)) + .5*(isReg(I,J)*isReg(K,J))
-                %            F(K,I) = (1.0-Fij)*(1.0-isReg(K,J))*(1.0-isReg(I,J)) + isReg(I,J)*(1.0-isReg(K,J)) + .5*(isReg(K,J)*isReg(I,J))
                 F(i,j,k) = Fij*(1-isREG(i,k))*(1-isREG(j,k)) + isREG(j,k)*(1-isREG(i,k)) + .5*isREG(i,k)*isREG(j,k);
                 F(j,i,k) = Fji*(1-isREG(j,k))*(1-isREG(i,k)) + isREG(i,k)*(1-isREG(j,k)) + .5*isREG(j,k)*isREG(i,k);
                 %!!!---Shares equation here!!!----
                 dSij(i,j,k) = S(i,k,t-1)*S(j,k,t-1)*(A(i,j)*F(i,j,k)-A(j,i)*F(j,i,k))*dt*CostSheet(k+2,57);
                 dSij(j,i,k) = -dSij(i,j,k); 
-     % Costs(i,17,k,t-1); /Costs(j,17,k,t-1)
             end
         end
         %Exogenous shares change
         %NOTE: Shares changes must sum to zero or they are not taken
         if abs(sum(SEx(:,k,t-1))) < 0.0001
-            %If for rounding reasons it does not sum exactly to zero,
-            %make it do so
             dSk(:,k) = SEx(:,k,t-1);
             dSk(1,k) = dSk(1,k) - sum(SEx(:,k,t-1))/NTT;
         else
@@ -428,21 +256,11 @@ for t = 2:N
         dSij(isnan(dSij)) = 0;
         %!!!---Shares equation here!!!----
         S(:,k,t) = S(:,k,t-1) + sum(dSij(:,:,k),2) + dSk(:,k);
-
-        %Copy over costs that don't change
         Costs(:,:,k,t,1,1,1) = Costs(:,:,k,t-1,1,1,1); 
         Cap(:,k,1)=CostSheet(33*(k-1)+3:33*k,21)';
         Cap(:,k,2)=Cap(:,k,1);
         Cap(:,k,t)=Cap(:,k,t-1);
-        IDCost(:,k,t,1,1,1)=Costs(:,1,k,1,1,1,1)*0.15*0.993^(t-1);
-        
-        %Cap(:,k,2)=Cap(:,k,1)*0.997;
-        %Cap(:,k,t)=Cap(:,k,t-1)*0.997;
-        %IDCost(:,k,t,L,B,ED)=Costs(:,1,k,1,L,B,ED)*0.2*0.9967^(t-1);
-        
-        %Endogenous CFs: re-normalise CFs to match the new ratio between endogenous D and Utot:
-        %(Mpkm/kseats-y)
-        %It is assumed that when D/Utot changes, the distance driven per vehicle changes, not the filling factor        
+        IDCost(:,k,t,1,1,1)=Costs(:,1,k,1,1,1,1)*0.15*0.993^(t-1);  
         if (Utot(k,t) > 0) 
             CF(:,k,t) = CF0(:,k)./sum(S(:,k,t).*CF0(:,k)./FF(:,k)).*D(k,t)./Utot(k,t);
         else
@@ -450,16 +268,7 @@ for t = 2:N
         end
         %U is the transport capacity by technology (kseats)
         U(:,k,t) = S(:,k,t)*Utot(k,t);
-        %NSales(:,k,121+t)=U(:,k,t)*1000-NSales(:,k,121+t-4)*Ell(k,27)-NSales(:,k,121+(t-2*4))*Ell(k,26)-NSales(:,k,121+(t-3*4))*Ell(k,25)-NSales(:,k,121+(t-4*4))*Ell(k,24)-NSales(:,k,121+(t-5*4))*Ell(k,23)-NSales(:,k,121+(t-6*4))*Ell(k,22)-NSales(:,k,121+(t-7*4))*Ell(k,21)-NSales(:,k,121+(t-8*4))*Ell(k,20)-NSales(:,k,121+(t-9*4))*Ell(k,19)-NSales(:,k,121+(t-10*4))*Ell(k,18)-NSales(:,k,121+(t-11*4))*Ell(k,17)-NSales(:,k,121+(t-12*4))*Ell(k,16)-NSales(:,k,121+(t-13*4))*Ell(k,15)-NSales(:,k,121+(t-14*4))*Ell(k,14)-NSales(:,k,121+(t-15*4))*Ell(k,13)-NSales(:,k,121+(t-16*4))*Ell(k,12)-NSales(:,k,121+(t-17*4))*Ell(k,11)-NSales(:,k,121+(t-18*4))*Ell(k,10)-NSales(:,k,121+(t-19*4))*Ell(k,9)-NSales(:,k,121+(t-20*4))*Ell(k,8)-NSales(:,k,121+(t-21*4))*Ell(k,7)-NSales(:,k,121+(t-22*4))*Ell(k,6)-NSales(:,k,121+(t-23*4))*Ell(k,5)-NSales(:,k,121+(t-24*4))*Ell(k,4)-NSales(:,k,121+(t-25*4))*Ell(k,3)-NSales(:,k,121+(t-26*4))*Ell(k,2)-NSales(:,k,121+(t-27*4))*Ell(k,1);
-        %NSales(:,k,120+t)=U(:,k,t)*1000-NSales(:,k,120+t-1)*Ell(k,27)-NSales(:,k,120+t-2)*Ell(k,27)-NSales(:,k,120+t-3)*Ell(k,27)-NSales(:,k,120+t-4)*Ell(k,27)-NSales(:,k,120+(t-5))*Ell(k,26)-NSales(:,k,120+(t-6))*Ell(k,26) -NSales(:,k,120+(t-7))*Ell(k,26)-NSales(:,k,120+(t-2*4))*Ell(k,26)-NSales(:,k,120+(t-9))*Ell(k,25)-NSales(:,k,120+(t-10))*Ell(k,25)-NSales(:,k,120+(t-11))*Ell(k,25)-NSales(:,k,120+(t-3*4))*Ell(k,25)-NSales(:,k,120+(t-13))*Ell(k,24)-NSales(:,k,120+(t-14))*Ell(k,24)-NSales(:,k,120+(t-15))*Ell(k,24)-NSales(:,k,120+(t-4*4))*Ell(k,24)-NSales(:,k,120+(t-17))*Ell(k,23)-NSales(:,k,120+(t-18))*Ell(k,23)-NSales(:,k,120+(t-19))*Ell(k,23)-NSales(:,k,120+(t-5*4))*Ell(k,23)-NSales(:,k,120+(t-21))*Ell(k,22)-NSales(:,k,120+(t-22))*Ell(k,22)-NSales(:,k,120+(t-23))*Ell(k,22)-NSales(:,k,120+(t-6*4))*Ell(k,22)-NSales(:,k,120+(t-25))*Ell(k,21)-NSales(:,k,120+(t-26))*Ell(k,21)-NSales(:,k,120+(t-27))*Ell(k,21)-NSales(:,k,120+(t-28))*Ell(k,21)-NSales(:,k,120+(t-29))*Ell(k,20)-NSales(:,k,120+(t-30))*Ell(k,20)-NSales(:,k,120+(t-31))*Ell(k,20)-NSales(:,k,120+(t-8*4))*Ell(k,20)-NSales(:,k,120+(t-33))*Ell(k,19)-NSales(:,k,120+(t-34))*Ell(k,19)-NSales(:,k,120+(t-35))*Ell(k,19)-NSales(:,k,120+(t-36))*Ell(k,19)-NSales(:,k,121+(t-37))*Ell(k,18)-NSales(:,k,121+(t-38))*Ell(k,18)-NSales(:,k,121+(t-39))*Ell(k,18)-NSales(:,k,121+(t-10*4))*Ell(k,18)-NSales(:,k,120+(t-41))*Ell(k,17)-NSales(:,k,120+(t-42))*Ell(k,17)-NSales(:,k,120+(t-43))*Ell(k,17)-NSales(:,k,120+(t-44))*Ell(k,17)-NSales(:,k,120+(t-45))*Ell(k,16)-NSales(:,k,120+(t-46))*Ell(k,16)-NSales(:,k,121+(t-47))*Ell(k,16)-NSales(:,k,121+(t-12*4))*Ell(k,16)-NSales(:,k,121+(t-49))*Ell(k,15)-NSales(:,k,121+(t-50))*Ell(k,15)-NSales(:,k,121+(t-51))*Ell(k,15)-NSales(:,k,121+(t-13*4))*Ell(k,15)-NSales(:,k,120+(t-53))*Ell(k,14)-NSales(:,k,120+(t-54))*Ell(k,14)-NSales(:,k,120+(t-55))*Ell(k,14)-NSales(:,k,120+(t-14*4))*Ell(k,14)-NSales(:,k,120+(t-57))*Ell(k,13)-NSales(:,k,120+(t-58))*Ell(k,13)-NSales(:,k,120+(t-59))*Ell(k,13)-NSales(:,k,120+(t-15*4))*Ell(k,13)-NSales(:,k,120+(t-61))*Ell(k,12)-NSales(:,k,120+(t-62))*Ell(k,12)-NSales(:,k,120+(t-63))*Ell(k,12)-NSales(:,k,120+(t-64))*Ell(k,12)-NSales(:,k,120+(t-65))*Ell(k,11)-NSales(:,k,120+(t-66))*Ell(k,11)-NSales(:,k,120+(t-67))*Ell(k,11)-NSales(:,k,120+(t-17*4))*Ell(k,11)-NSales(:,k,120+(t-69))*Ell(k,10)-NSales(:,k,120+(t-70))*Ell(k,10)-NSales(:,k,120+(t-71))*Ell(k,10)-NSales(:,k,120+(t-72))*Ell(k,10)-NSales(:,k,120+(t-73))*Ell(k,9)-NSales(:,k,120+(t-74))*Ell(k,9)-NSales(:,k,120+(t-75))*Ell(k,9)-NSales(:,k,120+(t-76))*Ell(k,9)-NSales(:,k,120+(t-77))*Ell(k,8)-NSales(:,k,120+(t-78))*Ell(k,8)-NSales(:,k,120+(t-79))*Ell(k,8)-NSales(:,k,120+(t-20*4))*Ell(k,8)-NSales(:,k,120+(t-81))*Ell(k,7)-NSales(:,k,120+(t-82))*Ell(k,7)-NSales(:,k,120+(t-83))*Ell(k,7)-NSales(:,k,120+(t-21*4))*Ell(k,7)-NSales(:,k,120+(t-85))*Ell(k,6)-NSales(:,k,120+(t-86))*Ell(k,6)-NSales(:,k,120+(t-87))*Ell(k,6)-NSales(:,k,120+(t-22*4))*Ell(k,6)-NSales(:,k,120+(t-89))*Ell(k,5)-NSales(:,k,120+(t-90))*Ell(k,5)-NSales(:,k,121+(t-91))*Ell(k,5)-NSales(:,k,121+(t-92))*Ell(k,5)-NSales(:,k,121+(t-93))*Ell(k,4)-NSales(:,k,120+(t-94))*Ell(k,4)-NSales(:,k,120+(t-95))*Ell(k,4)-NSales(:,k,120+(t-96))*Ell(k,4)-NSales(:,k,120+(t-97))*Ell(k,3)-NSales(:,k,120+(t-98))*Ell(k,3)-NSales(:,k,120+(t-99))*Ell(k,3)-NSales(:,k,120+(t-25*4))*Ell(k,3)-NSales(:,k,120+(t-101))*Ell(k,2)-NSales(:,k,120+(t-102))*Ell(k,2)-NSales(:,k,120+(t-103))*Ell(k,2)-NSales(:,k,120+(t-104))*Ell(k,2)-NSales(:,k,120+(t-105))*Ell(k,1)-NSales(:,k,120+(t-106))*Ell(k,1)-NSales(:,k,120+(t-107))*Ell(k,1)-NSales(:,k,120+(t-108))*Ell(k,1);          
-        %NSales(:,k,119+t)=U(:,k,t)*1000-NSales(:,k,119+t-1)*Ell(k,27)*4-NSales(:,k,119+t-5)*Ell(k,26)*4-NSales(:,k,119+t-9)*Ell(k,25)*4-NSales(:,k,119+t-13)*Ell(k,24)*4-NSales(:,k,119+(t-17))*Ell(k,23)-NSales(:,k,119+(t-21))*Ell(k,22)*4 -NSales(:,k,119+(t-25))*Ell(k,21)*4-NSales(:,k,119+(t-29))*Ell(k,20)*4-NSales(:,k,119+(t-33))*Ell(k,19)*4-NSales(:,k,119+(t-37))*Ell(k,18)*4-NSales(:,k,119+(t-41))*Ell(k,17)*4-NSales(:,k,119+(t-45))*Ell(k,16)*4-NSales(:,k,119+(t-49))*Ell(k,15)*4-NSales(:,k,119+(t-53))*Ell(k,14)*4-NSales(:,k,119+(t-57))*Ell(k,13)*4-NSales(:,k,119+(t-61))*Ell(k,12)*4-NSales(:,k,119+(t-65))*Ell(k,11)*4-NSales(:,k,119+(t-69))*Ell(k,10)*4-NSales(:,k,119+(t-73))*Ell(k,9)*4-NSales(:,k,119+(t-77))*Ell(k,8)*4-NSales(:,k,119+(t-81))*Ell(k,7)*4-NSales(:,k,119+(t-85))*Ell(k,6)*4;
-        
-        %NSales(:,k,119+t)=U(:,k,t)*1000-NSales(:,k,119+t-1)*Ell(k,27)-NSales(:,k,119+t-2)*Ell(k,27)-NSales(:,k,119+t-3)*Ell(k,27)-NSales(:,k,119+t-4)*Ell(k,27)-NSales(:,k,119+t-5)*Ell(k,26)-NSales(:,k,119+t-6)*Ell(k,26)-NSales(:,k,119+t-7)*Ell(k,26)-NSales(:,k,119+t-8)*Ell(k,26)-NSales(:,k,119+t-9)*Ell(k,25)-NSales(:,k,119+t-10)*Ell(k,25)-NSales(:,k,119+t-11)*Ell(k,25)-NSales(:,k,119+t-12)*Ell(k,25)-NSales(:,k,119+t-13)*Ell(k,24)-NSales(:,k,119+t-14)*Ell(k,24)-NSales(:,k,119+t-15)*Ell(k,24)-NSales(:,k,119+t-16)*Ell(k,24)-NSales(:,k,119+(t-17))*Ell(k,23)-NSales(:,k,119+(t-18))*Ell(k,23)-NSales(:,k,119+(t-19))*Ell(k,23)-NSales(:,k,119+(t-20))*Ell(k,23)-NSales(:,k,119+(t-21))*Ell(k,22)-NSales(:,k,119+(t-22))*Ell(k,22)-NSales(:,k,119+(t-23))*Ell(k,22)-NSales(:,k,119+(t-24))*Ell(k,22)-NSales(:,k,119+(t-25))*Ell(k,21)-NSales(:,k,119+(t-26))*Ell(k,21)-NSales(:,k,119+(t-27))*Ell(k,21)-NSales(:,k,119+(t-28))*Ell(k,21)-NSales(:,k,119+(t-29))*Ell(k,20)-NSales(:,k,119+(t-30))*Ell(k,20)-NSales(:,k,119+(t-31))*Ell(k,20)-NSales(:,k,119+(t-32))*Ell(k,20)-NSales(:,k,119+(t-33))*Ell(k,19)-NSales(:,k,119+(t-34))*Ell(k,19)-NSales(:,k,119+(t-35))*Ell(k,19)-NSales(:,k,119+(t-36))*Ell(k,19)-NSales(:,k,119+(t-37))*Ell(k,18)-NSales(:,k,119+(t-38))*Ell(k,18)-NSales(:,k,119+(t-39))*Ell(k,18)-NSales(:,k,119+(t-40))*Ell(k,18)-NSales(:,k,119+(t-41))*Ell(k,17)-NSales(:,k,119+(t-42))*Ell(k,17)-NSales(:,k,119+(t-43))*Ell(k,17)-NSales(:,k,119+(t-44))*Ell(k,17)-NSales(:,k,119+(t-45))*Ell(k,16)-NSales(:,k,119+(t-46))*Ell(k,16)-NSales(:,k,119+(t-47))*Ell(k,16)-NSales(:,k,119+(t-48))*Ell(k,16)-NSales(:,k,119+(t-49))*Ell(k,15)-NSales(:,k,119+(t-50))*Ell(k,15)-NSales(:,k,119+(t-51))*Ell(k,15)-NSales(:,k,119+(t-52))*Ell(k,15)-NSales(:,k,119+(t-53))*Ell(k,14)-NSales(:,k,119+(t-54))*Ell(k,14)-NSales(:,k,119+(t-55))*Ell(k,14)-NSales(:,k,119+(t-56))*Ell(k,14)-NSales(:,k,119+(t-57))*Ell(k,13)-NSales(:,k,119+(t-58))*Ell(k,13)-NSales(:,k,119+(t-59))*Ell(k,13)-NSales(:,k,119+(t-60))*Ell(k,13)-NSales(:,k,119+(t-61))*Ell(k,12)-NSales(:,k,119+(t-62))*Ell(k,12)-NSales(:,k,119+(t-63))*Ell(k,12)-NSales(:,k,119+(t-64))*Ell(k,12)-NSales(:,k,119+(t-65))*Ell(k,11)-NSales(:,k,119+(t-66))*Ell(k,11)-NSales(:,k,119+(t-67))*Ell(k,11)-NSales(:,k,119+(t-68))*Ell(k,11)-NSales(:,k,119+(t-69))*Ell(k,10)-NSales(:,k,119+(t-70))*Ell(k,10)-NSales(:,k,119+(t-71))*Ell(k,10)-NSales(:,k,119+(t-72))*Ell(k,10)-NSales(:,k,119+(t-73))*Ell(k,9)-NSales(:,k,119+(t-74))*Ell(k,9)-NSales(:,k,119+(t-73))*Ell(k,9)-NSales(:,k,119+(t-75))*Ell(k,9)-NSales(:,k,119+(t-77))*Ell(k,8)-NSales(:,k,119+(t-78))*Ell(k,8)-NSales(:,k,119+(t-79))*Ell(k,8)-NSales(:,k,119+(t-80))*Ell(k,8)-NSales(:,k,119+(t-81))*Ell(k,7)-NSales(:,k,119+(t-82))*Ell(k,7)-NSales(:,k,119+(t-83))*Ell(k,7)-NSales(:,k,119+(t-84))*Ell(k,7)-NSales(:,k,119+(t-85))*Ell(k,6)-NSales(:,k,119+(t-86))*Ell(k,6)-NSales(:,k,119+(t-87))*Ell(k,6)-NSales(:,k,119+(t-88))*Ell(k,6)-NSales(:,k,120+(t-89))*Ell(k,5)-NSales(:,k,120+(t-90))*Ell(k,5)-NSales(:,k,120+(t-91))*Ell(k,5)-NSales(:,k,120+(t-92))*Ell(k,5)-NSales(:,k,121+(t-93))*Ell(k,4)-NSales(:,k,121+(t-94))*Ell(k,4)-NSales(:,k,121+(t-95))*Ell(k,4)-NSales(:,k,121+(t-96))*Ell(k,4)-NSales(:,k,121+(t-97))*Ell(k,3)-NSales(:,k,121+(t-98))*Ell(k,3)-NSales(:,k,121+(t-99))*Ell(k,3);
         NSales(:,k,119+t)=(U(:,k,t)-U(:,k,t-1))*1000;
-        
-        %-NSales(:,k,119+(t-81))*Ell(k,7)-NSales(:,k,119+(t-82))*Ell(k,7)-NSales(:,k,119+(t-83))*Ell(k,7)-NSales(:,k,119+(t-21*4))*Ell(k,7)-NSales(:,k,119+(t-85))*Ell(k,6)-NSales(:,k,119+(t-86))*Ell(k,6)-NSales(:,k,119+(t-87))*Ell(k,6)-NSales(:,k,119+(t-22*4))*Ell(k,6)-NSales(:,k,119+(t-89))*Ell(k,5)-NSales(:,k,119+(t-90))*Ell(k,5)-NSales(:,k,119+(t-91))*Ell(k,5)-NSales(:,k,119+(t-92))*Ell(k,5)-NSales(:,k,119+(t-93))*Ell(k,4)-NSales(:,k,119+(t-94))*Ell(k,4)-NSales(:,k,119+(t-95))*Ell(k,4)-NSales(:,k,119+(t-96))*Ell(k,4)-NSales(:,k,119+(t-97))*Ell(k,3)-NSales(:,k,119+(t-98))*Ell(k,3)-NSales(:,k,119+(t-99))*Ell(k,3)-NSales(:,k,119+(t-25*4))*Ell(k,3)-NSales(:,k,119+(t-101))*Ell(k,2)-NSales(:,k,119+(t-102))*Ell(k,2)-NSales(:,k,119+(t-103))*Ell(k,2)-NSales(:,k,119+(t-104))*Ell(k,2)-NSales(:,k,119+(t-105))*Ell(k,1)-NSales(:,k,119+(t-106))*Ell(k,1)-NSales(:,k,119+(t-107))*Ell(k,1)-NSales(:,k,119+(t-108))*Ell(k,1);          
-        
-        
         totCap(:,k,t)=NSales(:,k,119+t).*Cap(:,k);
         
         if totCap(:,k,t)>=0
@@ -467,24 +276,7 @@ for t = 2:N
         elseif totCap(:,k,t)<0
          totCap1(:,k,t)=0;
         end
-        
-        %global capacity - sum of t and sum of k;
-        
-        %WCap(:,t) = WCap(:,t-1) + sum((totCap1(:,:,t)),2);
-        
-        %-NSales(k,121+(t-2*4))*Ell(k,26)-NSales(k,121+(t-3*4))*Ell(k,25);
-        
-        % New sales by technology;
-        
-        %.*Nseats(:,k)
-        %Total service generated by a particular technology (Mpkm/y)
-        %G(:,k,t) = U(:,k,t).*CF(:,k,t);
         G(:,k,t) = U(:,k,t).*D(k,t)*1000;
-        %SalesSheet(33+33*(k-1):64+33*k,4+round(t/4));
-        
-        
-        %Investment (sales): new capacity created (veh/y)
-        %I(:,k,t) = ((U(:,k,t)-U(:,k,t-1))/dt.*((U(:,k,t)-U(:,k,t-1)) > 0) + U(:,k,t-1)./Costs(:,8,k,t))./Nseats(:,k);
         I(:,k,t) = (U(:,k,t)-U(:,k,t-1));
         %---Emissions---: calculate fleet age effects, yearly
         %Aging fleet
@@ -504,14 +296,11 @@ for t = 2:N
             CO2Corr(k,t) = CO2Corr(k,t-1);
         end
         
-       
-        %else 
-        
         %Fleet emissions Gt/y
         E(:,k,t) = G(:,k,t).*CO2(:,k)*(1-BFM(k,t))/1e6;
         %Fuel use, PJ/y: filling factors don't change 
         J(:,k,t) = G(:,k,t).*EG(:,k)*2.388*10^(-11);
-        %./FF(:,k)./Nseats(:,k).*CO2Corr(k,t);
+ 
         %Fuel use per fuel type PJ/y
         for i = 1:NJ
             if (i ~= 5 & i ~= 11) %Other fuels
@@ -523,58 +312,20 @@ for t = 2:N
             end
         end
     end
-    % total sales
-    %NSales(k,1:30)=SalesSheet(k+3,3:32);
-    %Sales by technology 
-    
-    
-    %for n1=1:29
-     % SalesSheet(33+33*(k):63+33*(k),5+n1)*Ell(k,27-(n1-1));
-    %end
-    
-    %SalesAns(1:31,k,t)=SalesSheet(33+33*(k):63+33*(k),34-round(t/4))*Ell(k,27)-SalesSheet(33+33*(k):63+33*(k),33-round(t/4))*Ell(k,26);
-    
-    
-    %NSales(k,30+t)=U(:,k,30+t)-NSales(k,30+(t-1))*Ell(k,27)-NSales(k,30+(t-2))*Ell(k,26)-NSales(k,30+(t-3))*Ell(k,25)-NSales(k,30+(t-4))*Ell(k,24)-NSales(k,30+(t-5))*Ell(k,23)-NSales(k,30+(t-6))*Ell(k,22)-NSales(k,30+(t-7))*Ell(k,21)-NSales(k,30+(t-8))*Ell(k,20)-NSales(k,30+(t-9))*Ell(k,19)-NSales(k,30+(t-10))*Ell(k,18)-NSales(k,30+(t-11))*Ell(k,17)-NSales(k,30+(t-12))*Ell(k,16)-NSales(k,30+(t-13))*Ell(k,15)-NSales(k,30+(t-14))*Ell(k,14)-NSales(k,30+(t-15))*Ell(k,13)-NSales(k,30+(t-16))*Ell(k,12)-NSales(k,30+(t-17))*Ell(k,11)-NSales(k,30+(t-18))*Ell(k,10)-NSales(k,30+(t-19))*Ell(k,9)-NSales(k,30+(t-20))*Ell(k,8)-NSales(k,30+(t-21))*Ell(k,7)-NSales(k,30+(t-22))*Ell(k,6)-NSales(k,30+(t-23))*Ell(k,5)-NSales(k,30+(t-24))*Ell(k,4)-NSales(k,30+(t-25))*Ell(k,3)-NSales(k,30+(t-26))*Ell(k,2)-NSales(k,30+(t-27))*Ell(k,1);
-    % New sales by technology
-   
-    
-   % totalSales(k,t,1)=0;
-   % for n=1:26
-     %Calculate total sales from past sales and a survival function
-     %totalSales(k,t,n+1)=NSales(k,30+(t-n)).*Ell(k,27-n)+totalSales(k,t,n);
-    %end    
-   % NSales(k,30+t)=U(:,k,30+t)-totalSales(k,t,n+1);
-    
-   
+    %total capcity - used for modelling learning curve
     WCap(:,t) = WCap(:,t-1) + sum((totCap1(:,:,t)),2);
     WCapEV(1,t)=WCap(19,t)+WCap(20,t)+WCap(21,t)+WCap(22,t)+WCap(23,t)+WCap(24,t);
-    %C=C0*(P/P0)^(-alpha);
-   
+
     BCost(:,t,1,1,1)=(EngD(1,1)^(t-1))*(RareM(1,t))*IBatCost(1,1)*((WCapEV(1,t)./WCapEV(1,2))).^(b(:,1));
-   
-    %Costs(:,1,k,1)*0.2
-    % WCap(:,k,1)
-    
-    
-    %Cumulative investment in transport technologies : using the spillover matrix (k-veh)
+ 
     %This is global, hence we close the loop
     W(:,t) = W(:,t-1) + sum((B*I(:,:,t)),2)*dt;
-    %Ans=Costs(:,1,k,t-1);
     
-    % Costs(:,1,k,t) = Costs(:,1,k,t-1) + b.*(W(:,t)-W(:,t-1))./W(:,t).*Costs(:,1,k,t-1);
+  
     
     for k = 1:NWR
          Costs(:,1,k,t,1,1,1) = Costs(:,1,k,t-1,1,1,1) + b(:,1).*(W(:,t)-W(:,t-1))./W(:,t).*Costs(:,1,k,t-1,1,1,1);
          Costs(19:24,1,k,t,1,1,1)=(ICost(19:24,k,1,1,1,1)+BCost(19:24,t,1,1,1).*Cap(19:24,k,t)+IDCost(19:24,k,t,1,1,1))*DMCcont(1,t);
-     
-         %Costs(19:24,1,k,t,L)=(ICost(19:24,k,1)+(1+RawM(2,t))*BCost(19:24,t,L).*Cap(19:24,k,t)+IDCost(19:24,k,t))*DMC;
-         %+IDCost(19:24,k,t);
-         %*(1+RawM(2,t))
-        %Costs(25:31,1,k,t) = Costs(25:31,1,k,t-1) + b.*(W(25:31,t)-W(25:31,t-1))./W(25:31,t).*Costs(25:31,1,k,t-1);
-        %Costs(:,2,k,t) = Costs(:,2,k,t-1) - b.*(W(:,t)-W(:,t-1))./W(:,t).*Costs(:,2,k,t-1);
-        %calculates the LCOT
-       % [LCOT(:,k,t), dLCOT(:,k,t), TLCOT(:,k,t), dTLCOT(:,k,t), LTLCOT(:,k,t), dLTLCOT(:,k,t)] = FTTTrLCOTv3(Costs(:,:,k,t),CF(:,k),FF(:,k),Nseats(:,k),VT(:,k,t),FT(k,t),RT(:,k,t),RTCO(k,t),Gam(:,k),NTT,DelPr(:,k,t));
         [LCOT(:,k,t,1,1,1), dLCOT(:,k,t,1,1,1), TLCOT(:,k,t,1,1,1), dTLCOT(:,k,t,1,1,1), LTLCOT(:,k,t,1,1,1), dLTLCOT(:,k,t,1,1,1)] = FTTTrLCOTv3(Costs(:,:,k,t,1,1,1),CF(:,k),FF(:,k),Nseats(:,k),VT(:,k,t),FT(k,t),RT(:,k,t),OilP(:,k,t),RTCO(k,t),Gam(:,k),NTT);
     end 
     end
@@ -603,30 +354,9 @@ for k = 1:NWR
         end
         Uh(:,k,t) = Sh(:,k,t)*Utoth(k,t).*Nseats(:,k);
         Gh(:,k,t) = Uh(:,k,t).*CFh(:,k,t);
-        %2.38849/1e^12 converts the unit from megajoule to mtoe/yr
-        %Jh(:,k,t) = 2.388459*Gh(:,k,t).*EG(:,k)./FF(:,k)./Nseats(:,k)/1e12;
-        %Jh(:,k,t) = Gh(:,k,t).*EG(:,k)./FF(:,k)./Nseats(:,k);
-        %EEh(:,k,t)= Gh(:,k,t)./FF(:,k)./Nseats(:,k).*CO2(:,k).*1.2*(1-BFM(k,t))/1e6;
+    
     end
 end
-%Gh(:,k,t)./FF(:,k)./Nseats(:,k).*CO2(:,k).*CO2Corr(k,t)*(1-BFM(k,t))/1e6
-%Eh = cat(2,E
-
-%Here put time dimension first
-%We permute 2 dimensions so that we can plot more easily:
-%The time dimension goes from last to first (NET, NWR, t) -> (t, NET, NWR)
-%     ____i____
-%    /        /|
-%  j/        /NWR
-%  /___NET__/  |
-%  |        |  |
-%  |        |T |
-% t|        |i |
-%  |        |m
-%  |        |e
-%      .     
-%      .
-%      .
 
 Out.th = th;
 Out.t = [StartYear:dt:EndYear]';
